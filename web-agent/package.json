@@ -10,10 +10,13 @@
 		"apify": "^3.0.0",
 		"cheerio": "^1.0.0-rc.12",
 		"crawlee": "^3.0.0",
+		"json-schema-to-zod": "^1.1.1",
+		"langchain": "^0.0.147",
 		"lodash": "^4.17.21",
 		"lodash-es": "^4.17.21",
 		"openai": "^4.6.0",
-		"puppeteer": "*"
+		"puppeteer": "*",
+		"zod": "^3.22.2"
 	},
 	"devDependencies": {
 		"@apify/eslint-config-ts": "^0.2.3",

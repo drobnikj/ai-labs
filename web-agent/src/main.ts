@@ -1,11 +1,19 @@
 import { Actor } from 'apify';
-// For more information, see https://crawlee.dev
 import { launchPuppeteer, sleep } from 'crawlee';
+import { initializeAgentExecutorWithOptions } from 'langchain/agents';
+import { ChatOpenAI } from 'langchain/chat_models/openai';
+import { SerpAPI, DynamicTool, DynamicStructuredTool } from 'langchain/tools';
+import { Calculator } from 'langchain/tools/calculator';
 import { get_page_content } from './html_processor.js';
 import { Input } from './input.js';
 import { OpenAIProcessor } from './openai.js';
-import { AutomationContext } from './automation_context.js';
-import { ACTIONS } from './actions_list.js';
+import { ACTION_LIST } from './actions_list.js';
+import { z } from "zod";
+import {
+    jsonSchemaToZod,
+    jsonSchemaToZodDereffed,
+    parseSchema,
+} from "json-schema-to-zod";
 
 // Initialize the Apify SDK
 await Actor.init();
@@ -16,8 +24,6 @@ if (!process.env.OPENAI_API_KEY) {
 }
 
 const { startUrl, instructions } = await Actor.getInput() as Input;
-
-const context = [];
 
 const initialContext = {
     role: 'system',
@@ -35,18 +41,33 @@ const initialContext = {
         + '## WHEN TASK IS FINISHED ##\n'
         + 'When you have executed all the operations needed for the original task, call answer_user to give a response to the user.',
 };
-context.push(initialContext);
-const openaiProcessor = new OpenAIProcessor({ apiKey: process.env.OPENAI_API_KEY, initialContext });
 
-const initialPlan = await openaiProcessor.processChatGptAction({
-    message: {
-        role: 'user',
-        content: instructions,
-    },
-    action: ACTIONS.MAKE_PLAN,
+const tools = ACTION_LIST.map((action) => {
+    return new DynamicStructuredTool({
+        name: action.name,
+        description: action.description,
+        schema: action.parameters,
+        func: async () => console.log('action', action.name),
+    });
+});
+const chat = new ChatOpenAI({
+    openAIApiKey: process.env.OPENAI_API_KEY,
+    modelName: 'gpt-3.5-turbo-16k',
+    temperature: 0,
 });
 
-console.log('initialPlan', initialPlan);
+const executor = await initializeAgentExecutorWithOptions(tools, chat, {
+    agentType: 'openai-functions',
+    agentArgs: {
+        prefix: initialContext.content,
+    },
+    verbose: true,
+});
+
+const result = await executor.invoke({ input: instructions });
+console.log(result);
+
+// console.log('initialPlan', initialPlan);
 
 const browser = await launchPuppeteer({ launchOptions: { headless: false } });
 const page = await browser.newPage();
@@ -59,26 +80,26 @@ await sleep(2000);
 const html = await page.content();
 const minHtml = await get_page_content(page);
 
-const processNextStep = await openaiProcessor.processChatGptAction({
-    message: {
-        role: 'function',
-        name: 'make_plan',
-        content: JSON.stringify({
-            status: 'success',
-            message: 'Continues regarding the plan.'
-                + `The browser is currently on the start page ${startUrl} and content of page is ${minHtml}`,
-        }),
-    },
-});
+// const processNextStep = await openaiProcessor.processChatGptAction({
+//     message: {
+//         role: 'function',
+//         name: 'make_plan',
+//         content: JSON.stringify({
+//             status: 'success',
+//             message: 'Continues regarding the plan.'
+//                 + `The browser is currently on the start page ${startUrl} and content of page is ${minHtml}`,
+//         }),
+//     },
+// });
 
-console.log('processNextStep', processNextStep);
+// console.log('processNextStep', processNextStep);
 
-for (let i = 0; i < 3; i++) {
-    const processNextStep = // TODO process next step based on previous step
-    let nextStep = await openaiProcessor.processChatGptAction({
-
-    });
-}
+// for (let i = 0; i < 3; i++) {
+//     const processNextStep = // TODO process next step based on previous step
+//     let nextStep = await openaiProcessor.processChatGptAction({
+//
+//     });
+// }
 
 console.log('html', html.length);
 console.log('minHtml', minHtml.length);
