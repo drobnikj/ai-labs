@@ -1,14 +1,8 @@
 import { z } from 'zod';
+import { get_page_content } from './html_processor.js';
+
 // TODO: Types
 export const ACTIONS = {
-    MAKE_PLAN: {
-        name: 'make_plan',
-        description: "Create a plan to accomplish the given task. Summarize what the user's task is in a step by step manner. How would you browse the internet to accomplish the task. Start with 'I will'",
-        parameters: z.object({
-            plan: z.string().describe('The step by step plan on how you will navigate the internet and what you will do'),
-
-        }),
-    },
     GO_TO_URL: {
         name: 'go_to_url',
         description: 'Goes to a specific URL and gets the content',
@@ -16,6 +10,13 @@ export const ACTIONS = {
             url: z.string().url().describe('The valid URL to go to (including protocol)'),
         }),
         required: ['url'],
+        action: async (page, { url }) => {
+            console.log('go_to_url', url);
+            await page.goto(url);
+            await page.waitForTimeout(1000);
+            const minHtml = await get_page_content(page);
+            return minHtml;
+        },
     },
     CLICK_LINK: {
         name: 'click_link',
@@ -24,7 +25,10 @@ export const ACTIONS = {
             text: z.string().describe('The text on the link you want to click'),
             gid: z.number().int().positive().describe('The gid of the link to click (from the page content)'),
         }),
-        required: ['reason', 'gid'],
+        required: ['text', 'gid'],
+        action: async (page, { text, gid }) => {
+            console.log('click_link', { text, gid });
+        },
     },
     TYPE_TEXT: {
         name: 'type_text',
@@ -37,6 +41,23 @@ export const ACTIONS = {
             submit: z.boolean().describe('Whether to submit the form after filling the fields'),
         }),
         required: ['form_data', 'submit'],
+        action: async (page, { form_data, submit }) => {
+            console.log('form_data', { form_data, submit });
+        },
+    },
+    EXTRACT_DATA: {
+        name: 'extract_data',
+        description: 'Extract data from page content',
+        parameters: z.object({
+            extract_data: z.array(z.object({
+                gid: z.number().int().positive().describe('The gid attribute from the content to extract data'),
+                attribute_name: z.string().describe('The name of the attribute to extract'),
+            })).describe('The gid attribute of the input to type into (from the page content)'),
+        }),
+        required: ['extract_data'],
+        action: async (page, { extract_data }) => {
+            console.log('extract_data', { extract_data });
+        },
     },
     SAVE_OUTPUT: {
         name: 'save_output',
@@ -46,6 +67,9 @@ export const ACTIONS = {
             answer: z.string().describe('The response to the user'),
         }),
         required: ['summary', 'answer'],
+        action: async (page, { summary, answer }) => {
+            console.log('save_output',  { summary, answer });
+        },
     },
 };
 
