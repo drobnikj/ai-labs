@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-extraneous-dependencies
 import express from 'express';
 import http from 'node:http';
 import { writeFile } from 'node:fs/promises';
@@ -32,7 +33,7 @@ export const createServer = async (page: Page) => {
 
     let initialPage = true;
 
-    app.get('/', async (req, res) => {
+    app.get('/', async (_, res) => {
         if (initialPage) {
             const startOptions = {
                 format: 'jpeg',
@@ -46,13 +47,14 @@ export const createServer = async (page: Page) => {
                     sessionId: frameObject.sessionId,
                 });
             });
+            // @ts-ignore
             await client.send('Page.startScreencast', startOptions);
             initialPage = false;
         }
         res.status(200).send(DUMMY_HTML);
     });
 
-    app.get(`/${PAGE_FILE_NAME}`, (req, res, next) => {
+    app.get(`/${PAGE_FILE_NAME}`, (_, res, next) => {
         const options = {
             root: './',
             dotfiles: 'deny',
@@ -61,6 +63,7 @@ export const createServer = async (page: Page) => {
                 'x-sent': true,
             },
         };
+        // @ts-ignore
         res.sendFile(PAGE_FILE_NAME, options, (err) => {
             if (err) next(err);
             next();

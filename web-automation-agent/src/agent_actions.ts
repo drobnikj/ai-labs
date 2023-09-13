@@ -21,7 +21,7 @@ async function waitForNavigation(page: Page) {
     }
 }
 
-export async function goToUrl(context: AgentBrowserContext, { url }) {
+export async function goToUrl(context: AgentBrowserContext, { url }: { url: string }) {
     log.info('Calling go to page', { url });
     const { page } = context;
     await page.goto(url);
@@ -32,7 +32,7 @@ export async function goToUrl(context: AgentBrowserContext, { url }) {
     return maybeShortsTextByTokenLength(`Previous action was: go_to_url, HTML of current page: ${minHtml}`, 10000);
 }
 
-export async function clickLink(context: AgentBrowserContext, { text, gid }) {
+export async function clickLink(context: AgentBrowserContext, { text, gid }: { text: string, gid: number }) {
     log.info('Calling clicking on link', { text, gid });
     const { page } = context;
     let elementFoundAndClicked = false;
@@ -47,6 +47,7 @@ export async function clickLink(context: AgentBrowserContext, { text, gid }) {
     if (!elementFoundAndClicked && text) {
         const link = await page.$x(`//a[contains(text(), '${text}')]`);
         if (link && link.length) {
+            // @ts-ignore
             await link[0].click();
             elementFoundAndClicked = true;
         }
@@ -65,22 +66,29 @@ export async function clickLink(context: AgentBrowserContext, { text, gid }) {
     return maybeShortsTextByTokenLength(`Previous action was: click_element, HTML of current page: ${minHtml}`, 10000);
 }
 
-export async function extractData(context: AgentBrowserContext, { data }) {
-    log.info('Calling extracting data from page', { data });
+export async function extractData(context: AgentBrowserContext, { attributesToExtract }: { attributesToExtract: { gid: number, keyName: string }[] }) {
+    log.info('Calling extracting data from page', { attributesToExtract });
     const { page } = context;
     const extractedData = {};
-    for (const { gid, attribute_name } of data) {
+    for (const { gid, keyName } of attributesToExtract) {
         const element = await page.$(`[${UNIQUE_ID_ATTRIBUTE}="${gid}"]`);
         if (element) {
-            const attributeValue = await element.evaluate((el, attr) => el.getAttribute(attr), attribute_name);
-            extractedData[attribute_name] = attributeValue;
+            const value = await page.evaluate((el) => el.textContent, element);
+            // @ts-ignore
+            extractedData[keyName] = value && value.trim();
         }
     }
-    return JSON.stringify(extractedData);
+    return `Extracted JSON data from page: ${JSON.stringify(extractedData)}`;
 }
 
-export async function saveOutput(context: AgentBrowserContext, { data }) {
-    log.info('Calling save output', { data });
+export async function saveOutput(_: AgentBrowserContext, { object }: { object: { key: string, value: string }[] }) {
+    log.info('Calling save output', { object });
+    // NOTE: For some reason passing the object directly to as function param did not work.
+    const data = {};
+    object.forEach(({ key, value }) => {
+        // @ts-ignore
+        data[key] = value;
+    });
     await Actor.setValue('OUTPUT', data);
     return 'Output saved, you can finish the task now.';
 }
@@ -97,7 +105,9 @@ export const ACTIONS = {
     },
     CLICK_LINK: {
         name: 'click_link',
-        description: 'Clicks a link with the given gid on the page. Note that gid is required and you must use the corresponding gid attribute from the page content. Add the text of the link to confirm that you are clicking the right link.',
+        description: 'Clicks a link with the given gid on the page. Note that gid is required and'
+            + ' you must use the corresponding gid attribute from the page content. '
+            + 'Add the text of the link to confirm that you are clicking the right link.',
         parameters: z.object({
             text: z.string().describe('The text on the link you want to click'),
             gid: z.number().describe('The gid of the link to click (from the page content)'),
@@ -109,21 +119,23 @@ export const ACTIONS = {
         name: 'extract_data',
         description: 'Extract data from HTML page content',
         parameters: z.object({
-            attributes_to_extract: z.array(z.object({
-                gid: z.number().int().describe('The gid HTML attribute from the content to extract data'),
-                attribute_name: z.string().describe('The name of the attribute to extract'),
-            })).describe('The list of gid attributes of the elements to extract data from (from the page content)'),
+            attributesToExtract: z.array(z.object({
+                gid: z.number().int().describe('The gid HTML attribute from the content to extract text from'),
+                keyName: z.string().describe('The name of the key'),
+            })).describe('The list of gid keys of the elements gid attributes to extract text from (from the page content)'),
         }),
-        required: ['attributes_to_extract'],
+        required: ['attributesToExtract'],
         action: extractData,
     },
     SAVE_OUTPUT: {
-        name: 'save_output',
+        name: 'save_object_to_output',
         description: 'Saves the output in the key-value store',
         parameters: z.object({
-            data: (z.object({})).describe('Object that can be stringify as JSON'),
+            object: z.array(z.object({
+                key: z.string().describe('Key of the object to save to output'),
+                value: z.string().describe('The value of the object to save to output'),
+            })).describe('The key value pair of object to save to output'),
         }),
-        required: ['data'],
         action: saveOutput,
     },
 };

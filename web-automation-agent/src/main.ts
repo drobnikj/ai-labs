@@ -43,11 +43,13 @@ const page = await browser.newPage();
 const server = await createServer(page);
 
 const tools = ACTION_LIST.map((action) => {
+    // TODO: Better to create a class for each action to inherit from DynamicStructuredTool
     return new DynamicStructuredTool({
         name: action.name,
         description: action.description,
         schema: action.parameters,
         func: async (args) => {
+            // @ts-ignore
             return action.action({ page }, args);
         },
     });
@@ -64,14 +66,15 @@ const executor = await initializeAgentExecutorWithOptions(tools, chat, {
     agentArgs: {
         prefix: initialContext.content,
     },
-    verbose: true,
+    verbose: false,
 });
 
-const result = await executor.run(instructions);
-console.log(result);
+await executor.run(`Open url ${startUrl} and continue with ${instructions}.`);
 
+// Wait for 10 seconds to see the final page in live view.
 await sleep(10000);
 
 // Exit successfully
 server.close();
+await browser.close();
 await Actor.exit();
