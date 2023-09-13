@@ -5,7 +5,7 @@ import { writeFile } from 'node:fs/promises';
 import type { Page } from 'puppeteer';
 
 const PORT = 4000; // TODO: apify view port
-const PAGE_FILE_NAME = 'test.jpeg';
+const PAGE_FILE_NAME = 'page.jpeg';
 
 const DUMMY_HTML = `<!DOCTYPE html>
 <html lang="en">
