@@ -1,0 +1,48 @@
+{
+	"name": "web-automation-agent",
+	"version": "0.0.1",
+	"type": "module",
+	"description": "This is an example of an Apify actor.",
+	"engines": {
+		"node": ">=16.0.0"
+	},
+	"dependencies": {
+		"apify": "^3.0.0",
+		"cheerio": "^1.0.0-rc.12",
+		"cors": "^2.8.5",
+		"crawlee": "^3.0.0",
+		"express": "^4.18.2",
+		"gpt-3-encoder": "^1.1.4",
+		"langchain": "^0.0.147",
+		"puppeteer": "*",
+		"socket.io": "^4.7.2",
+		"zod": "^3.22.2"
+	},
+	"devDependencies": {
+		"@apify/eslint-config-ts": "^0.2.3",
+		"@apify/tsconfig": "^0.1.0",
+		"@jest/globals": "^29.5.0",
+		"@types/async-retry": "^1.4.5",
+		"@types/html-to-text": "^9.0.0",
+		"@types/jest": "^29.5.0",
+		"@types/turndown": "^5.0.1",
+		"@typescript-eslint/eslint-plugin": "^5.32.0",
+		"@typescript-eslint/parser": "^5.32.0",
+		"eslint": "^8.20.0",
+		"jest": "^29.5.0",
+		"ts-jest": "^29.1.0",
+		"ts-node": "^10.9.1",
+		"typescript": "^4.7.4"
+	},
+	"scripts": {
+		"start": "npm run start:dev",
+		"start:prod": "node dist/main.js",
+		"start:dev": "ts-node-esm -T src/main.ts",
+		"build": "tsc",
+		"lint": "eslint ./src --ext .ts",
+		"lint:fix": "eslint ./src --ext .ts --fix",
+		"test": "jest"
+	},
+	"author": "It's not you it's me",
+	"license": "ISC"
+}
