@@ -1,5 +1,5 @@
 import { Actor, log } from 'apify';
-import { launchPuppeteer, sleep, ProxyConfiguration, SessionPool } from 'crawlee';
+import { launchPuppeteer, sleep } from 'crawlee';
 import { initializeAgentExecutorWithOptions } from 'langchain/agents';
 import { ChatOpenAI } from 'langchain/chat_models/openai';
 import { DynamicStructuredTool } from 'langchain/tools';
@@ -40,8 +40,8 @@ const initialContext = {
 
 let proxyUrl;
 if (proxyConfiguration) {
-    const proxy = new ProxyConfiguration(proxyConfiguration);
-    proxyUrl = await proxy.newUrl();
+    const proxy = await Actor.createProxyConfiguration(proxyConfiguration);
+    if (proxy) proxyUrl = await proxy.newUrl();
 }
 
 const browser = await launchPuppeteer({
