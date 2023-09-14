@@ -49,6 +49,6 @@ export async function shrinkHtml(page: Page, options: ShrinkHtmlOptions) {
 export async function shrinkHtmlForWebAutomation(page: Page) {
     return shrinkHtml(page, {
         whiteListTags: WHITELIST_TAGS_WEB_AUTOMATION,
-        whiteListAttributes: WHITELIST_ATTRIBUTES_WEB_AUTOMATION
+        whiteListAttributes: WHITELIST_ATTRIBUTES_WEB_AUTOMATION,
     });
 }

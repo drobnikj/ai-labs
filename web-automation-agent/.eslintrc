@@ -8,6 +8,9 @@
     "extends": [
         "@apify/eslint-config-ts"
     ],
+    "rules": {
+        "@typescript-eslint/ban-ts-comment": "warn"
+    },
     "parserOptions": {
         "project": "./tsconfig.json",
         "ecmaVersion": 2020
