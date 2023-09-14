@@ -1,10 +1,12 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
+import { log } from 'crawlee';
 import express from 'express';
 import http from 'node:http';
 import { writeFile } from 'node:fs/promises';
 import type { Page } from 'puppeteer';
 
-const PORT = 4000; // TODO: apify view port
+// @ts-ignore
+const PORT = process.env.ACTOR_WEB_SERVER_PORT ? parseInt(process.env.ACTOR_WEB_SERVER_PORT, 10) : 4000;
 const PAGE_FILE_NAME = 'page.jpeg';
 
 const DUMMY_HTML = `<!DOCTYPE html>
@@ -42,7 +44,7 @@ export const createServer = async (page: Page) => {
             };
             client.on('Page.screencastFrame', async (frameObject) => {
                 const buffer = Buffer.from(frameObject.data, 'base64');
-                await writeFile('test.jpeg', buffer);
+                await writeFile(PAGE_FILE_NAME, buffer);
                 await client.send('Page.screencastFrameAck', {
                     sessionId: frameObject.sessionId,
                 });
@@ -71,7 +73,7 @@ export const createServer = async (page: Page) => {
     });
 
     server.listen(PORT, () => {
-        console.log(`Server listening on ${PORT}`);
+        log.debug(`Server listening on ${PORT}`);
     });
 
     return server;

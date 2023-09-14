@@ -1,10 +1,11 @@
 import { Actor } from 'apify';
-import { utils, log } from 'crawlee';
+import { utils } from 'crawlee';
 import { type Page } from 'puppeteer';
 import { z } from 'zod';
 import { shrinkHtmlForWebAutomation, tagAllElementsOnPage } from './shrink_html.js';
 import { UNIQUE_ID_ATTRIBUTE } from './consts.js';
 import { maybeShortsTextByTokenLength } from './tokens.js';
+import { webAgentLog } from './utils.js';
 
 interface AgentBrowserContext {
     page: Page;
@@ -17,30 +18,33 @@ async function waitForNavigation(page: Page) {
             waitUntil: 'load',
         });
     } catch (error: any) {
-        log.warning('waitForNavigation failed', error?.message);
+        webAgentLog.warning('waitForNavigation failed', error);
     }
 }
 
 export async function goToUrl(context: AgentBrowserContext, { url }: { url: string }) {
-    log.info('Calling go to page', { url });
+    webAgentLog.info('Calling go to page', { url });
     const { page } = context;
     await page.goto(url);
     await waitForNavigation(page);
     await utils.puppeteer.closeCookieModals(page);
     await tagAllElementsOnPage(page, UNIQUE_ID_ATTRIBUTE);
     const minHtml = await shrinkHtmlForWebAutomation(page);
+    webAgentLog.info(`Went to page, current URL: ${page.url()}`, { url, htmlLength: minHtml.length });
     return maybeShortsTextByTokenLength(`Previous action was: go_to_url, HTML of current page: ${minHtml}`, 10000);
 }
 
 export async function clickLink(context: AgentBrowserContext, { text, gid }: { text: string, gid: number }) {
-    log.info('Calling clicking on link', { text, gid });
+    webAgentLog.info('Calling clicking on link', { text, gid });
     const { page } = context;
     let elementFoundAndClicked = false;
+    let linkFoundByGidSelector = false;
     if (gid) {
         const link = await page.$(`a[gid="${gid}"]`);
         if (link) {
             await link.click();
             elementFoundAndClicked = true;
+            linkFoundByGidSelector = true;
         }
     }
 
@@ -63,11 +67,12 @@ export async function clickLink(context: AgentBrowserContext, { text, gid }: { t
     await tagAllElementsOnPage(page, UNIQUE_ID_ATTRIBUTE);
     const minHtml = await shrinkHtmlForWebAutomation(page);
 
+    webAgentLog.info(`Clicked on link, current URL: ${page.url()}`, { text, gid, linkFoundByGidSelector, htmlLength: minHtml.length });
     return maybeShortsTextByTokenLength(`Previous action was: click_element, HTML of current page: ${minHtml}`, 10000);
 }
 
 export async function extractData(context: AgentBrowserContext, { attributesToExtract }: { attributesToExtract: { gid: number, keyName: string }[] }) {
-    log.info('Calling extracting data from page', { attributesToExtract });
+    webAgentLog.info('Calling extracting data from page', { attributesToExtract });
     const { page } = context;
     const extractedData = {};
     for (const { gid, keyName } of attributesToExtract) {
@@ -78,11 +83,12 @@ export async function extractData(context: AgentBrowserContext, { attributesToEx
             extractedData[keyName] = value && value.trim();
         }
     }
+    webAgentLog.info('Data were extracted from page', { extractedData });
     return `Extracted JSON data from page: ${JSON.stringify(extractedData)}`;
 }
 
 export async function saveOutput(_: AgentBrowserContext, { object }: { object: { key: string, value: string }[] }) {
-    log.info('Calling save output', { object });
+    webAgentLog.info('Calling save output', { object });
     // NOTE: For some reason passing the object directly to as function param did not work.
     const data = {};
     object.forEach(({ key, value }) => {
@@ -90,6 +96,7 @@ export async function saveOutput(_: AgentBrowserContext, { object }: { object: {
         data[key] = value;
     });
     await Actor.setValue('OUTPUT', data);
+    webAgentLog.info('Output saved!', { data });
     return 'Output saved, you can finish the task now.';
 }
 

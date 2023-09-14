@@ -1,4 +1,4 @@
-import { Actor } from 'apify';
+import { Actor, log } from 'apify';
 import { launchPuppeteer, sleep } from 'crawlee';
 import { initializeAgentExecutorWithOptions } from 'langchain/agents';
 import { ChatOpenAI } from 'langchain/chat_models/openai';
@@ -6,6 +6,11 @@ import { DynamicStructuredTool } from 'langchain/tools';
 import { Input } from './input.js';
 import { ACTION_LIST } from './agent_actions.js';
 import { createServer } from './screenshotter_server.js';
+import { webAgentLog } from './utils.js';
+
+const LIVE_VIEW_URL = process.env.ACTOR_WEB_SERVER_URL ? process.env.ACTOR_WEB_SERVER_URL : 'http://localhost:4000';
+
+log.info('Starting Actor..');
 
 // Initialize the Apify SDK
 await Actor.init();
@@ -38,9 +43,11 @@ const browser = await launchPuppeteer({
     launchOptions: { headless: false },
 });
 const page = await browser.newPage();
+log.info('Browser opened');
 
 // Server which serves screenshots
 const server = await createServer(page);
+log.info(`Live view started, you can see Web Automation Agent in action on in Live View tab or ${LIVE_VIEW_URL}`);
 
 const tools = ACTION_LIST.map((action) => {
     // TODO: Better to create a class for each action to inherit from DynamicStructuredTool
@@ -66,10 +73,13 @@ const executor = await initializeAgentExecutorWithOptions(tools, chat, {
     agentArgs: {
         prefix: initialContext.content,
     },
-    verbose: false,
+    verbose: log.getLevel() >= log.LEVELS.DEBUG,
 });
 
-await executor.run(`Open url ${startUrl} and continue with ${instructions}.`);
+const finalInstructions = `Open url ${startUrl} and continue with ${instructions}`;
+webAgentLog.info(`Stating agent with instructions: ${finalInstructions}`);
+const result = await executor.run(finalInstructions);
+webAgentLog.info(result);
 
 // Wait for 10 seconds to see the final page in live view.
 await sleep(10000);
@@ -77,4 +87,6 @@ await sleep(10000);
 // Exit successfully
 server.close();
 await browser.close();
+
+log.info('Actor finished');
 await Actor.exit();
