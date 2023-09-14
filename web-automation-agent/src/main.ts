@@ -84,8 +84,8 @@ webAgentLog.info(result);
 // Wait for 10 seconds to see the final page in live view.
 await sleep(10000);
 
-// Exit successfully
-server.close();
+// Clean up
+await server.destroy();
 await browser.close();
 
 log.info('Actor finished');

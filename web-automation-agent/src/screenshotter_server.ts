@@ -2,7 +2,7 @@
 import { log } from 'crawlee';
 import express from 'express';
 import http from 'node:http';
-import { writeFile } from 'node:fs/promises';
+import { writeFile, rm } from 'node:fs/promises';
 import type { Page } from 'puppeteer';
 
 // @ts-ignore
@@ -67,7 +67,10 @@ export const createServer = async (page: Page) => {
         };
         // @ts-ignore
         res.sendFile(PAGE_FILE_NAME, options, (err) => {
-            if (err) next(err);
+            // TODO: Fallback for some dummy image
+            if (err) {
+                log.debug('Cannot serve file', err);
+            }
             next();
         });
     });
@@ -76,5 +79,10 @@ export const createServer = async (page: Page) => {
         log.debug(`Server listening on ${PORT}`);
     });
 
-    return server;
+    return {
+        destroy: async () => {
+            server.close();
+            await rm(PAGE_FILE_NAME, { force: true });
+        },
+    };
 };
