@@ -1,5 +1,5 @@
 import { Actor, log } from 'apify';
-import { launchPuppeteer, sleep } from 'crawlee';
+import { launchPuppeteer, sleep, ProxyConfiguration, SessionPool } from 'crawlee';
 import { initializeAgentExecutorWithOptions } from 'langchain/agents';
 import { ChatOpenAI } from 'langchain/chat_models/openai';
 import { DynamicStructuredTool } from 'langchain/tools';
@@ -20,7 +20,7 @@ if (!process.env.OPENAI_API_KEY) {
     throw new Error('OPENAI_API_KEY cannot be empty!');
 }
 
-const { startUrl, instructions } = await Actor.getInput() as Input;
+const { startUrl, instructions, proxyConfiguration } = await Actor.getInput() as Input;
 
 const initialContext = {
     role: 'system',
@@ -38,9 +38,16 @@ const initialContext = {
         + 'In that case, try navigating to their front page and using their search bar or try navigating to the right place with links.',
 };
 
+let proxyUrl;
+if (proxyConfiguration) {
+    const proxy = new ProxyConfiguration(proxyConfiguration);
+    proxyUrl = await proxy.newUrl();
+}
+
 const browser = await launchPuppeteer({
     useChrome: true,
     launchOptions: { headless: false },
+    proxyUrl,
 });
 const page = await browser.newPage();
 log.info('Browser opened');

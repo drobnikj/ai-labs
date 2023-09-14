@@ -6,16 +6,25 @@
         "startUrls": {
             "title": "Start URL",
             "type": "string",
-            "description": "URL to start with.",
+            "description": "URL to start with automation.",
             "editor": "textfield",
             "prefill": "https://apify.com"
         },
         "instructions": {
-            "title": "Instruction for web agent",
+            "title": "Instructions for the Web Agent",
             "type": "string",
-            "description": "What agent will do in browser.",
+            "description": "Instruction how agent browse the web.",
             "editor": "textarea",
-            "prefill": "Go to pricing page and save available pricing plans."
+            "prefill": "Goto pricing page and get all pricing plans, extract all information about plan and save information about the cheapest pricing plan as output."
+        },
+        "proxyConfiguration": {
+            "sectionCaption": "Proxy configuration",
+            "title": "Proxy configuration",
+            "type": "object",
+            "description": "Specifies proxy servers that will be used by the scraper in order to hide its origin.<br><br>For details, see <a href='https://apify.com/drobnikj/gpt-scraper#proxy-configuration' target='_blank' rel='noopener'>Proxy configuration</a> in README.",
+            "prefill": { "useApifyProxy": true },
+            "default": { "useApifyProxy": false },
+            "editor": "proxy"
         }
     }
 }
