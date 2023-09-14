@@ -3,7 +3,7 @@
     "type": "object",
     "schemaVersion": 1,
     "properties": {
-        "startUrls": {
+        "startUrl": {
             "title": "Start URL",
             "type": "string",
             "description": "URL to start with automation.",
