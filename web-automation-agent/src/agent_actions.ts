@@ -40,9 +40,14 @@ export async function clickLink(context: AgentBrowserContext, { text, gid }: { t
     let elementFoundAndClicked = false;
     let linkFoundByGidSelector = false;
     if (gid) {
-        const link = await page.$(`a[gid="${gid}"]`);
+        const linkHtmlSelector = `a[gid="${gid}"]`;
+        const link = await page.$(linkHtmlSelector);
         if (link) {
-            await link.click();
+            await Promise.all([
+                // NOTE: Pptr click is not working for some reason in non visible elements, so ensure click is called on the element itself.
+                page.$eval(linkHtmlSelector, (el: any) => el.click()),
+                link.click(),
+            ]);
             elementFoundAndClicked = true;
             linkFoundByGidSelector = true;
         }
@@ -69,6 +74,31 @@ export async function clickLink(context: AgentBrowserContext, { text, gid }: { t
 
     webAgentLog.info(`Clicked on link, current URL: ${page.url()}`, { text, gid, linkFoundByGidSelector, htmlLength: minHtml.length });
     return maybeShortsTextByTokenLength(`Previous action was: click_element, HTML of current page: ${minHtml}`, 10000);
+}
+
+export async function fillForm(context: AgentBrowserContext, { formData }: { formData: { gid: number, value: string }[]}) {
+    webAgentLog.info('Calling filling form', { formData });
+    const { page } = context;
+    for (const { gid, value } of formData) {
+        const element = await page.$(`[${UNIQUE_ID_ATTRIBUTE}="${gid}"]`);
+        if (element) {
+            await element.type(value.trim());
+        }
+    }
+    webAgentLog.info('Form filled');
+    const submitButton = await page.$('button[type="submit"]');
+    // If the submit button is not presented, submit the form by pressing enter.
+    if (submitButton) {
+        await submitButton.click();
+    } else {
+        await page.keyboard.press('Enter');
+    }
+    await waitForNavigation(page);
+    await utils.puppeteer.closeCookieModals(page);
+    await tagAllElementsOnPage(page, UNIQUE_ID_ATTRIBUTE);
+    const minHtml = await shrinkHtmlForWebAutomation(page);
+    webAgentLog.info(`Form submitted, current URL: ${page.url()}`, { htmlLength: minHtml.length });
+    return maybeShortsTextByTokenLength(`Previous action was: fill_form_and_submit, HTML of current page: ${minHtml}`, 10000);
 }
 
 export async function extractData(context: AgentBrowserContext, { attributesToExtract }: { attributesToExtract: { gid: number, keyName: string }[] }) {
@@ -121,6 +151,17 @@ export const ACTIONS = {
         }),
         required: ['text', 'gid'],
         action: clickLink,
+    },
+    FILL_FORM: {
+        name: 'fill_form_and_submit',
+        description: 'Types value to input fields and submit the form.',
+        parameters: z.object({
+            formData: z.array(z.object({
+                gid: z.number().int().describe('The gid HTML attribute from the content to fill'),
+                value: z.string().describe('The value to fill to the input field'),
+            })).describe('The list of form data to fill'),
+        }),
+        action: fillForm,
     },
     EXTRACT_DATA: {
         name: 'extract_data',
