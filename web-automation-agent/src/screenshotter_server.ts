@@ -81,6 +81,7 @@ export const createServer = async (page: Page) => {
 
     return {
         destroy: async () => {
+            await client.detach();
             server.close();
             await rm(PAGE_FILE_NAME, { force: true });
         },
