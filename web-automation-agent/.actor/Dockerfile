@@ -19,7 +19,7 @@ COPY --chown=myuser . ./
 RUN npm run build
 
 # Create final image
-FROM apify/actor-node-puppeteer-chrome:16
+FROM apify/actor-node-puppeteer-chrome:18
 
 # Copy just package.json and package-lock.json
 # to speed up the build using Docker layer cache.
