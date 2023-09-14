@@ -10,8 +10,6 @@ import { webAgentLog } from './utils.js';
 
 const LIVE_VIEW_URL = process.env.ACTOR_WEB_SERVER_URL ? process.env.ACTOR_WEB_SERVER_URL : 'http://localhost:4000';
 
-log.info('Starting Actor..');
-
 // Initialize the Apify SDK
 await Actor.init();
 
@@ -21,6 +19,8 @@ if (!process.env.OPENAI_API_KEY) {
 }
 
 const { startUrl, instructions, proxyConfiguration } = await Actor.getInput() as Input;
+
+log.info('Starting Actor..', { startUrl, instructions });
 
 const initialContext = {
     role: 'system',
