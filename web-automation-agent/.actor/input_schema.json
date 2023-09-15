@@ -15,7 +15,7 @@
             "type": "string",
             "description": "Instruction how agent browse the web.",
             "editor": "textarea",
-            "prefill": "Goto pricing page and get all pricing plans, extract all information about plan and save information about the cheapest pricing plan as output."
+            "prefill": "Go to the pricing page, extract the cheapest pricing plan information, and save it into output."
         },
         "proxyConfiguration": {
             "sectionCaption": "Proxy configuration",
