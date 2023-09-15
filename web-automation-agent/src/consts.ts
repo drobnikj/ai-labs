@@ -14,16 +14,5 @@ export const WHITELIST_TAGS_WEB_AUTOMATION = [
 export const WHITELIST_ATTRIBUTES_WEB_AUTOMATION = [
     UNIQUE_ID_ATTRIBUTE,
     'href',
-];
-// WEB SCRAPING
-// TODO
-export const WHITELIST_TAGS_WEB_SCRAPING = [
-    'html', 'body', 'main', 'div', 'p',
-    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'a', 'button',
-    'form', 'input', 'label', 'select', 'option', 'textarea',
-];
-export const WHITELIST_ATTRIBUTES_WEB_SCRAPING = [
-    UNIQUE_ID_ATTRIBUTE,
-    'href',
+    'alt',
 ];

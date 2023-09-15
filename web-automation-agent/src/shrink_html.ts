@@ -24,6 +24,7 @@ export async function shrinkHtml(page: Page, options: ShrinkHtmlOptions) {
     const html = await page.content();
     const $ = cheerio.load(html);
     const allElements = $('html *');
+    // TODO: Remove empty elements (with not content)
     for (const element of allElements.toArray().reverse()) {
         const $element = $(element);
         const tag = $element.prop('tagName').toLocaleLowerCase();

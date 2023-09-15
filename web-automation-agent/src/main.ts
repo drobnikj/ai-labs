@@ -83,7 +83,9 @@ const executor = await initializeAgentExecutorWithOptions(tools, chat, {
     verbose: log.getLevel() >= log.LEVELS.DEBUG,
 });
 
-const finalInstructions = `Open url ${startUrl} and continue with ${instructions}`;
+const finalInstructions = startUrl
+    ? `Open url ${startUrl} and continue with ${instructions}`
+    : instructions;
 webAgentLog.info(`Stating agent with instructions: ${finalInstructions}`);
 const result = await executor.run(finalInstructions);
 webAgentLog.info(`Agent finished it's work.`);

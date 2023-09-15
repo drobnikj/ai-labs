@@ -6,7 +6,7 @@
         "startUrl": {
             "title": "Start URL",
             "type": "string",
-            "description": "URL to start with automation.",
+            "description": "URL to start with automation, if not filled you need to specify it in instructions.",
             "editor": "textfield",
             "prefill": "https://apify.com"
         },
@@ -26,5 +26,6 @@
             "default": { "useApifyProxy": false },
             "editor": "proxy"
         }
-    }
+    },
+    "required": ["instructions"]
 }

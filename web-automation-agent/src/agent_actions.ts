@@ -14,7 +14,7 @@ interface AgentBrowserContext {
 export async function waitForNavigation(page: Page) {
     try {
         await page.waitForNavigation({
-            timeout: 10000,
+            timeout: 15000,
             waitUntil: 'load',
         });
     } catch (error: any) {
@@ -196,6 +196,7 @@ export const ACTIONS = {
         }),
         action: saveOutput,
     },
+    // TODO: Action to save to dataset
 };
 
 export const ACTION_LIST = Object.values(ACTIONS);
