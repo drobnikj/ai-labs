@@ -1,4 +1,4 @@
-## Web Automation Agent [Experimental]
+# Web Automation Agent [Experimental]
 
 > The Agent is currently in **experimental** stage. It is not recommended to use it in production. Please forward all feedback to issues.
 
@@ -33,3 +33,9 @@ This option tells agent how to browse the web. For example, you can send the fol
 The **Proxy configuration** (`proxyConfiguration`) option enables you to set proxies.
 The scraper will use these to prevent its detection by target websites.
 You can use both [Apify Proxy](https://apify.com/proxy) and custom HTTP or SOCKS5 proxy servers.
+
+
+## Issues to solve
+- [ ] Cannot fill special inputs like date or special selects like "Monthly budget" on https://apify.com/enterprise#form
+- [ ] The agent can throw because it limits number of token, we can improve the way reove HTML from previous messages
+

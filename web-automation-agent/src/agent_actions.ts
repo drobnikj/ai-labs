@@ -1,6 +1,6 @@
 import { Actor } from 'apify';
 import { utils } from 'crawlee';
-import { type Page } from 'puppeteer';
+import { ElementHandle, type Page } from 'puppeteer';
 import { z } from 'zod';
 import { shrinkHtmlForWebAutomation, tagAllElementsOnPage } from './shrink_html.js';
 import { UNIQUE_ID_ATTRIBUTE } from './consts.js';
@@ -11,7 +11,7 @@ interface AgentBrowserContext {
     page: Page;
 }
 
-async function waitForNavigation(page: Page) {
+export async function waitForNavigation(page: Page) {
     try {
         await page.waitForNavigation({
             timeout: 10000,
@@ -34,6 +34,20 @@ export async function goToUrl(context: AgentBrowserContext, { url }: { url: stri
     return maybeShortsTextByTokenLength(`Previous action was: go_to_url, HTML of current page: ${minHtml}`, 10000);
 }
 
+export async function clickElement(page: Page, element: ElementHandle) {
+    try {
+        await Promise.all([
+            // NOTE: Pptr click is not working for some reason for non visible elements,
+            // ensures click is called on the element itself.
+            page.evaluate((el: any) => el.click(), element),
+            element.click(),
+        ]);
+    } catch (error: any) {
+        // This can happen when click work in the first try, but second click fails, because loosing context.
+        webAgentLog.debug('The clickElement failed!', { error });
+    }
+}
+
 export async function clickLink(context: AgentBrowserContext, { text, gid }: { text: string, gid: number }) {
     webAgentLog.info('Calling clicking on link', { text, gid });
     const { page } = context;
@@ -43,27 +57,23 @@ export async function clickLink(context: AgentBrowserContext, { text, gid }: { t
         const linkHtmlSelector = `a[gid="${gid}"]`;
         const link = await page.$(linkHtmlSelector);
         if (link) {
-            await Promise.all([
-                // NOTE: Pptr click is not working for some reason in non visible elements, so ensure click is called on the element itself.
-                page.$eval(linkHtmlSelector, (el: any) => el.click()),
-                link.click(),
-            ]);
+            await clickElement(page, link);
             elementFoundAndClicked = true;
             linkFoundByGidSelector = true;
         }
     }
 
     if (!elementFoundAndClicked && text) {
-        const link = await page.$x(`//a[contains(text(), '${text}')]`);
-        if (link && link.length) {
-            // @ts-ignore
-            await link[0].click();
+        const link = await page.$(`a ::-p-text(${text})`);
+        if (link) {
+            await clickElement(page, link);
             elementFoundAndClicked = true;
         }
     }
 
     if (!elementFoundAndClicked) {
         // TODO: Handle this error
+        webAgentLog.error(`Cannot find link with text ${text} or gid ${gid} on ${page.url()}`);
         throw new Error('Element not found');
     }
 
